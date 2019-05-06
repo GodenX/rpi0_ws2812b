@@ -119,7 +119,7 @@ font5x3 = {
 
 mask = bytearray([1, 2, 4, 8, 16, 32, 64, 128])
 
-#               R    G    B
+#         R    G    B
 WHITE = (255, 255, 255)
 GRAY = (185, 185, 185)
 BLACK = (0, 0, 0)
