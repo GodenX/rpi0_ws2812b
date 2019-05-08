@@ -19,7 +19,6 @@
 ### Description :
 - 通过Raspberry Pi zero W 控制 ws2812b 显示
 - 通过MQTT实现开关机、显示效果切换等功能
-- 通过GIT实现自动在线更新
 
 
 ### MQTT - API:
@@ -87,6 +86,10 @@
 ```
 
 ### Change Log:
+
+- v0.1(2019.05.08)：
+   - 完成远程控制API
+   - 当需要完整更新程序时，在目录下放置update文件
 
 - 2019.05.06：
     - 新增对MQTT通讯的支持
