@@ -16,8 +16,8 @@ __author__ = 'jackie'
 import logging.handlers
 import json
 import paho.mqtt.client
-from multiprocessing import Process
 from ws2812b import *
+from app import *
 
 logging.getLogger().setLevel(logging.DEBUG)
 
@@ -34,18 +34,25 @@ class MyMQTTClient(object):
 
     def _on_connect(self, client, userdata, flags, rc):
         logging.info("MQTT connected with result code " + str(rc))
-        self._client.subscribe("/MyLED")
+        self._client.subscribe(mqtt_topic_rx)
 
     def _on_message(self, client, userdata, msg):
-        var = json.loads(msg.payload.decode("utf-8"))
-        logging.debug(var)
-        task = LEDTask(var["Brightness"], var["Command"], var["Wait_s"], **var["Value"])
-        task.daemon = True
-        task.start()
+        try:
+            var = json.loads(msg.payload.decode("utf-8"))
+            logging.debug(var)
+            task = LEDTask(var["Brightness"], var["Command"], var["Wait_s"], **var["Value"])
+            task.daemon = True
+            task.start()
+        except Exception as e:
+            logging.error(e)
+            self._client.publish(mqtt_topic_tx, payload=e, qos=0, retain=False)
 
     def connect(self):
         self._client.connect(self._hostname, self._port)
         self._client.username_pw_set(self._username, self._password)
+
+    def pub(self, topic, msg):
+        self._client.publish(topic, payload=msg, qos=0, retain=False)
 
     def run(self):
         self._client.loop_forever()
