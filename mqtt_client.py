@@ -15,6 +15,7 @@ __author__ = 'jackie'
 
 import logging.handlers
 import json
+import os
 import paho.mqtt.client
 from ws2812b import *
 from app import *
@@ -38,6 +39,8 @@ class MyMQTTClient(object):
 
     def _on_message(self, client, userdata, msg):
         try:
+            if os.path.isfile("/home/pi/rpi0_ws2812b/wait_command"):
+                os.remove("/home/pi/rpi0_ws2812b/wait_command")
             var = json.loads(msg.payload.decode("utf-8"))
             logging.debug(var)
             task = LEDTask(var["Brightness"], var["Command"], var["Wait_s"], **var["Value"])

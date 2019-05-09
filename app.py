@@ -41,11 +41,9 @@ class LEDTask(Process):
         try:
             led = LEDDriver(self._led_brightness)
             if self._value["cmd"] == "PowerON":
-                led.scroll_text_display("HELLO", random.randrange(0, 0xFFFFFF, 1), 0.2)
+                self.wait_command()
             elif self._value["cmd"] == "PowerOFF":
                 led.power_off()
-            elif self._value["cmd"] == "":
-                led.change_brightness(self._led_brightness)
             else:
                 logging.debug("Command error")
         except Exception as e:
@@ -81,6 +79,26 @@ class LEDTask(Process):
                 logging.debug("Command error")
         except Exception as e:
             logging.error(e)
+
+    def wait_command(self):
+        os.mknod("wait_command")
+        led = LEDDriver(self._led_brightness)
+        wait = True
+        while wait:
+            try:
+                if os.path.isfile("/home/pi/rpi0_ws2812b/wait_command"):
+                    led.scroll_text_display("HELLO")
+                    led.scroll_text_display("HELLO")
+                    led.scroll_text_display("HELLO")
+                    led.color_random(10)
+                    led.color_wipe()
+                    led.color_wipe()
+                    led.color_wipe()
+                    led.clear_display()
+                else:
+                    wait = False
+            except Exception as e:
+                logging.error(e)
 
 
 if __name__ == '__main__':
