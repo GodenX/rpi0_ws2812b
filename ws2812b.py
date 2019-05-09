@@ -214,7 +214,7 @@ class LEDDriver(object):
             self._strip.show()
             time.sleep(wait_time)
 
-    def scroll_text_display(self, string, color="", wait_time=150):
+    def scroll_text_display(self, string, color="", wait_time=0.15):
         if color == "":
             color = random.randrange(0, 0xFFFFFF, 2)
         logging.debug("scroll_text_display: %s %d" % (string, color))

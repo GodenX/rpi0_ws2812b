@@ -41,7 +41,7 @@ class LEDTask(Process):
         try:
             led = LEDDriver(self._led_brightness)
             if self._value["cmd"] == "PowerON":
-                led.scroll_text_display("hello", random.randrange(0, 0xFFFFFF, 1), 0.2)
+                led.scroll_text_display("HELLO", random.randrange(0, 0xFFFFFF, 1), 0.2)
             elif self._value["cmd"] == "PowerOFF":
                 led.power_off()
             elif self._value["cmd"] == "":
@@ -72,7 +72,7 @@ class LEDTask(Process):
             logging.debug("mode2")
             led = LEDDriver(self._led_brightness)
             if self._value["effect"] == "effect01":
-                led.scroll_text_display("hello")
+                led.scroll_text_display("HELLO")
             elif self._value["effect"] == "effect02":
                 led.color_random(display_time=1)
             elif self._value["effect"] == "effect03":
