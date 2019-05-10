@@ -102,6 +102,9 @@ class LEDTask(Process):
 
 
 if __name__ == '__main__':
+    task = LEDTask(0.8, "wait_command", 0)
+    task.daemon = True
+    task.start()
     mq = MyMQTTClient("127.0.0.1", 1883)
     mq.connect()
     mq.run()
