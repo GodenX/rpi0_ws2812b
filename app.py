@@ -102,6 +102,6 @@ class LEDTask(Process):
 
 
 if __name__ == '__main__':
-    mq = MyMQTTClient("192.168.1.111", 1883)
+    mq = MyMQTTClient("127.0.0.1", 1883)
     mq.connect()
     mq.run()
