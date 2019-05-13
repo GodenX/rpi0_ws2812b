@@ -21,13 +21,18 @@ from ws2812b import *
 
 mqtt_topic_tx = "/LED0/Tx"
 mqtt_topic_rx = "/LED0/Rx"
+command_list = ("system_control", "mode0", "mode1", "mode2", "wait_command")
 
 
 class LEDTask(Process):
     def __init__(self, led_brightness, command, wait_s, **value):
+        global command_list
         Process.__init__(self)
         self._led_brightness = led_brightness
-        self._command = command
+        if command in command_list:
+            self._command = command
+        else:
+            self._command = "command_error"
         self._wait_s = wait_s
         self._value = value
 
@@ -44,67 +49,68 @@ class LEDTask(Process):
                 self.wait_command()
             elif self._value["cmd"] == "PowerOFF":
                 led.power_off()
+            elif self._value["cmd"] == "SystemHalt":
+                os.popen("halt")
+            elif self._value["cmd"] == "SystemReboot":
+                os.popen("reboot")
             else:
-                logging.debug("Command error")
+                self.command_error()
         except Exception as e:
             logging.error(e)
+            self.command_error()
 
     def mode0(self):
+        logging.debug("mode0")
         try:
-            logging.debug("mode0")
             led = LEDDriver(self._led_brightness)
             led.set_color(**self._value)
         except Exception as e:
             logging.error(e)
+            self.command_error()
 
     def mode1(self):
+        logging.debug("mode1")
         try:
-            logging.debug("mode1")
             led = LEDDriver(self._led_brightness)
             led.scroll_text_display(self._value["str"])
         except Exception as e:
             logging.error(e)
+            self.command_error()
 
     def mode2(self):
+        logging.debug("mode2")
         try:
-            logging.debug("mode2")
             led = LEDDriver(self._led_brightness)
             if self._value["effect"] == "effect01":
-                led.scroll_text_display("HELLO")
+                while True:
+                    led.scroll_text_display("HELLO")
             elif self._value["effect"] == "effect02":
-                led.color_random(display_time=1)
+                while True:
+                    led.color_random(display_time=1)
             elif self._value["effect"] == "effect03":
-                led.color_wipe()
+                while True:
+                    led.color_wipe()
             else:
-                logging.debug("Command error")
+                self.command_error()
         except Exception as e:
             logging.error(e)
+            self.command_error()
 
     def wait_command(self):
-        os.mknod("wait_command")
-        led = LEDDriver(self._led_brightness)
-        wait = True
-        while wait:
-            try:
-                if os.path.isfile("/home/pi/rpi0_ws2812b/wait_command"):
-                    led.scroll_text_display("HELLO")
-                    led.scroll_text_display("HELLO")
-                    led.scroll_text_display("HELLO")
-                    led.color_random(10)
-                    led.color_wipe()
-                    led.color_wipe()
-                    led.color_wipe()
-                    led.clear_display()
-                else:
-                    wait = False
-            except Exception as e:
-                logging.error(e)
+        logging.debug("wait_command")
+        try:
+            led = LEDDriver(self._led_brightness)
+            while True:
+                led.color_random(display_time=1)
+        except Exception as e:
+            logging.error(e)
+            self.command_error()
+
+    def command_error(self):
+        logging.error("Command error!")
 
 
 if __name__ == '__main__':
-    task = LEDTask(0.8, "wait_command", 0)
-    task.daemon = True
-    task.start()
     mq = MyMQTTClient("127.0.0.1", 1883)
     mq.connect()
     mq.run()

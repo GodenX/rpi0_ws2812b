@@ -5,7 +5,7 @@
 - rpi0_ws2812b
 	- app.py --------------------- 执行文件
 	- ws2812b.py ---------------- ws2812b灯串驱动
-	- README.md --------------- 说明文档
+    - mqtt_client ----------------- MQTT客户端驱动
 
 
 ### Python Version : 
@@ -14,6 +14,7 @@
     - paho-mqtt
     - [neopixel](https://learn.adafruit.com/adafruit-neopixel-uberguide/python-circuitpython)
     - numpy
+    - multiprocess
 
 
 ### Description :
@@ -29,16 +30,18 @@
     
 |  功能  |  指令  |  
 | :----: | :----: |  
-|  开机  |  "PowerON" |
-|  关机  |  "PowerOFF" |
+|  开启显示  |  "PowerON" |
+|  关闭显示  |  "PowerOFF" |
+|    关机    |  "SystemHalt"  |
+|    重启    |  "SystemReboot"  |
 
 ```
 {
     "Command":"system_control",         # 控制模式选择
     "Brightness":0.8,                   # 控制灯串亮度，范围 0 ~ 1，空缺则保持不变
-    "Wait_s":60,                        # 延时60秒执行
+    "Wait_s":0,                         # 立即执行
     "Value":{
-        "cmd":"PowerOFF"                # 关机指令
+        "cmd":"PowerOFF"                # 关闭显示
         }
 }
 ```
@@ -47,7 +50,7 @@
 {
     "Command":"mode0",         # 控制模式选择
     "Brightness":0.8,          # 控制灯串亮度，范围 0 ~ 1，空缺则保持不变
-    "Wait_s":120,              # 延时120秒执行
+    "Wait_s":60,               # 延时120秒执行
     "Value":{                  # 模式0时的参数，空缺则保持不变
             "0":"255,0,0"      # 第0个灯珠，RGB色彩
             "1":"0,255,0"
@@ -86,6 +89,13 @@
 ```
 
 ### Change Log:
+
+- v0.2(2019.05.13):
+    - 优化进程管理机制
+    - 修改开机启动画面为随机显示颜色
+    - 添加对于树莓派的软关机指令 “SystemHalt”
+    - 添加对于树莓派的重启指令 “SystemReboot”
+    - 修复其他bug
 
 - v0.1.01(2019.05.10):
     - 修复开机启动时不显示预设动画的bug

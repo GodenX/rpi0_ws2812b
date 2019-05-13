@@ -32,6 +32,9 @@ class MyMQTTClient(object):
         self._client = paho.mqtt.client.Client(client_id)
         self._client.on_connect = self._on_connect
         self._client.on_message = self._on_message
+        self._task = LEDTask(0.8, "wait_command", 0)
+        self._task.daemon = True
+        self._task.start()
 
     def _on_connect(self, client, userdata, flags, rc):
         logging.info("MQTT connected with result code " + str(rc))
@@ -39,13 +42,13 @@ class MyMQTTClient(object):
 
     def _on_message(self, client, userdata, msg):
         try:
-            if os.path.isfile("/home/pi/rpi0_ws2812b/wait_command"):
-                os.remove("/home/pi/rpi0_ws2812b/wait_command")
             var = json.loads(msg.payload.decode("utf-8"))
             logging.debug(var)
-            task = LEDTask(var["Brightness"], var["Command"], var["Wait_s"], **var["Value"])
-            task.daemon = True
-            task.start()
+            self._task.terminate()
+            self._task.join()
+            self._task = LEDTask(var["Brightness"], var["Command"], var["Wait_s"], **var["Value"])
+            self._task.daemon = True
+            self._task.start()
         except Exception as e:
             logging.error(e)
             self._client.publish(mqtt_topic_tx, payload=e, qos=0, retain=False)

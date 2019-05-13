@@ -15,7 +15,6 @@ __author__ = 'jackie'
 
 import logging.handlers
 import time, random
-
 import board
 import numpy
 import neopixel
@@ -182,12 +181,14 @@ class LEDDriver(object):
         self._led_brightness = led_brightness
         self._strip.brightness = self._led_brightness
         self._strip.show()
+        logging.debug("change_brightness end!")
 
     def set_color(self, **color_dict):
         logging.debug("set_color")
         for i in color_dict:
             self._strip[int(i)] = tuple(eval(color_dict[i]))
         self._strip.show()
+        logging.debug("set_color end!")
 
     def color_random(self, display_time, wait_time=0.001):
         cycles = display_time / wait_time
@@ -200,6 +201,7 @@ class LEDDriver(object):
             self._strip[a] = (r, g, b)
             self._strip.show()
             time.sleep(wait_time)
+        logging.debug("color_random end!")
 
     def color_wipe(self, r="", g="", b="", wait_time=0.05):
         if r == "":
@@ -213,6 +215,7 @@ class LEDDriver(object):
             self._strip[matrix[i]] = (g, r, b)
             self._strip.show()
             time.sleep(wait_time)
+        logging.debug("color_wipe end!")
 
     def scroll_text_display(self, string, color="", wait_time=0.15):
         if color == "":
@@ -242,15 +245,19 @@ class LEDDriver(object):
             self._draw_display()
             self._display = numpy.roll(self._display, -1, axis=1)
             time.sleep(wait_time)
+        logging.debug("scroll_text_display end!")
 
     def clear_display(self):
         logging.debug("clear_display")
         self._strip.fill((0, 0, 0))
         self._strip.show()
+        logging.debug("clear_display end!")
 
     def power_off(self):
         logging.debug("power_off")
+        self.clear_display()
         self._strip.deinit()
+        logging.debug("power_off end!")
 
     def _draw_display(self):
         for x in range(0, self._led_width):
