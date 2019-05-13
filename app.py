@@ -14,7 +14,7 @@
 __author__ = 'jackie'
 
 import logging.handlers
-import os
+import os, re
 from multiprocessing import Process
 from mqtt_client import *
 from ws2812b import *
@@ -22,19 +22,20 @@ from ws2812b import *
 mqtt_topic_tx = "/LED0/Tx"
 mqtt_topic_rx = "/LED0/Rx"
 command_list = ("system_control", "mode0", "mode1", "mode2", "wait_command")
+led_brightness_default = 0.8
 
 
 class LEDTask(Process):
-    def __init__(self, led_brightness, command, wait_s, **value):
+    def __init__(self, command, wait_s, led_object, **value):
         global command_list
         Process.__init__(self)
-        self._led_brightness = led_brightness
         if command in command_list:
             self._command = command
         else:
             self._command = "command_error"
         self._wait_s = wait_s
         self._value = value
+        self._led = led_object
 
     def run(self):
         logging.debug("Wait %d seconds" % self._wait_s)
@@ -42,13 +43,16 @@ class LEDTask(Process):
         return getattr(self, self._command, self.run)()
 
     def system_control(self):
-        logging.debug("system_control")
+        logging.info("system_control")
         try:
-            led = LEDDriver(self._led_brightness)
             if self._value["cmd"] == "PowerON":
                 self.wait_command()
             elif self._value["cmd"] == "PowerOFF":
-                led.power_off()
+                self._led.power_off()
+            elif "Brightness:" in self._value["cmd"]:
+                var = re.search(r"\d{1,2}", self._value["cmd"])
+                brightness = int(var.group())
+                self._led.change_brightness(brightness)
             elif self._value["cmd"] == "SystemHalt":
                 os.popen("halt")
             elif self._value["cmd"] == "SystemReboot":
@@ -56,61 +60,58 @@ class LEDTask(Process):
             else:
                 self.command_error()
         except Exception as e:
-            logging.error(e)
-            self.command_error()
+            self.command_error(str(e))
 
     def mode0(self):
-        logging.debug("mode0")
+        logging.info("mode0")
         try:
-            led = LEDDriver(self._led_brightness)
-            led.set_color(**self._value)
+            self._led.set_color(**self._value)
         except Exception as e:
-            logging.error(e)
-            self.command_error()
+            self.command_error(str(e))
 
     def mode1(self):
-        logging.debug("mode1")
+        logging.info("mode1")
         try:
-            led = LEDDriver(self._led_brightness)
-            led.scroll_text_display(self._value["str"])
+            self._led.scroll_text_display(self._value["str"])
         except Exception as e:
-            logging.error(e)
-            self.command_error()
+            self.command_error(str(e))
 
     def mode2(self):
-        logging.debug("mode2")
+        logging.info("mode2")
         try:
-            led = LEDDriver(self._led_brightness)
             if self._value["effect"] == "effect01":
                 while True:
-                    led.scroll_text_display("HELLO")
+                    self._led.scroll_text_display("HELLO")
             elif self._value["effect"] == "effect02":
                 while True:
-                    led.color_random(display_time=1)
+                    for i in range(0, 49):
+                        self._led.change_brightness(i)
+                        self._led.color_random(display_time=0.003)
+                    for i in range(48, -1, -1):
+                        self._led.change_brightness(i)
+                        self._led.color_random(display_time=0.003)
             elif self._value["effect"] == "effect03":
                 while True:
-                    led.color_wipe()
+                    self._led.color_wipe()
             else:
                 self.command_error()
         except Exception as e:
-            logging.error(e)
-            self.command_error()
+            self.command_error(str(e))
 
     def wait_command(self):
-        logging.debug("wait_command")
+        logging.info("wait_command")
         try:
-            led = LEDDriver(self._led_brightness)
             while True:
-                led.color_random(display_time=1)
+                self._led.color_random(display_time=1)
         except Exception as e:
-            logging.error(e)
-            self.command_error()
+            self.command_error(str(e))
 
-    def command_error(self):
-        logging.error("Command error!")
+    def command_error(self, e="command not in list!"):
+        logging.error("Command error: %s" % e)
 
 
 if __name__ == '__main__':
-    mq = MyMQTTClient("127.0.0.1", 1883)
+    led = LEDDriver(led_brightness_default)
+    mq = MyMQTTClient("127.0.0.1", 1883, led)
     mq.connect()
     mq.run()

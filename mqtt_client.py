@@ -20,11 +20,11 @@ import paho.mqtt.client
 from ws2812b import *
 from app import *
 
-logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.INFO)
 
 
 class MyMQTTClient(object):
-    def __init__(self, hostname, port, client_id='', username='', password=''):
+    def __init__(self, hostname, port, led_object, client_id='', username='', password=''):
         self._hostname = hostname
         self._port = port
         self._username = username
@@ -32,7 +32,8 @@ class MyMQTTClient(object):
         self._client = paho.mqtt.client.Client(client_id)
         self._client.on_connect = self._on_connect
         self._client.on_message = self._on_message
-        self._task = LEDTask(0.8, "wait_command", 0)
+        self._led = led_object
+        self._task = LEDTask("wait_command", 0, self._led)
         self._task.daemon = True
         self._task.start()
 
@@ -46,7 +47,7 @@ class MyMQTTClient(object):
             logging.debug(var)
             self._task.terminate()
             self._task.join()
-            self._task = LEDTask(var["Brightness"], var["Command"], var["Wait_s"], **var["Value"])
+            self._task = LEDTask(var["Command"], var["Wait_s"], self._led, **var["Value"])
             self._task.daemon = True
             self._task.start()
         except Exception as e:

@@ -19,7 +19,7 @@ import board
 import numpy
 import neopixel
 
-logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.INFO)
 
 font5x3 = {
     0x00000020: [0x00, 0x00, 0x00],
@@ -177,11 +177,14 @@ class LEDDriver(object):
                                         pixel_order=order)
 
     def change_brightness(self, led_brightness):
-        logging.debug("change_brightness: " + str(led_brightness))
-        self._led_brightness = led_brightness
-        self._strip.brightness = self._led_brightness
-        self._strip.show()
-        logging.debug("change_brightness end!")
+        global Brightness
+        if (led_brightness >= 0) and (led_brightness <= 48):
+            self._led_brightness = Brightness[led_brightness]
+            self._strip.brightness = self._led_brightness
+            self._strip.show()
+            logging.debug("change_brightness: " + str(self._led_brightness))
+        else:
+            logging.debug("led_brightness out of range!")
 
     def set_color(self, **color_dict):
         logging.debug("set_color")
