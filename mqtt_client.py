@@ -21,7 +21,7 @@ from multiprocessing import Queue
 from ws2812b import *
 from app import *
 
-logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.INFO)
 
 
 class MyMQTTClient(object):

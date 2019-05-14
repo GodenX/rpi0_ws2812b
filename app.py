@@ -57,7 +57,7 @@ class LEDTask(Process):
             return LEDDriver(brightness)
 
     def system_control(self):
-        logging.info("system_control")
+        logging.debug("system_control")
         try:
             if self._value["cmd"] == "PowerON":
                 self.wait_command()
@@ -74,7 +74,7 @@ class LEDTask(Process):
             self.command_error(str(e))
 
     def mode0(self):
-        logging.info("mode0")
+        logging.debug("mode0")
         try:
             led = self._create_led_object()
             led.set_color(**self._value)
@@ -82,7 +82,7 @@ class LEDTask(Process):
             self.command_error(str(e))
 
     def mode1(self):
-        logging.info("mode1")
+        logging.debug("mode1")
         try:
             led = self._create_led_object()
             led.scroll_text_display(self._value["str"])
@@ -90,7 +90,7 @@ class LEDTask(Process):
             self.command_error(str(e))
 
     def mode2(self):
-        logging.info("mode2")
+        logging.debug("mode2")
         try:
             led = self._create_led_object()
             if self._value["effect"] == "effect01":
@@ -116,7 +116,7 @@ class LEDTask(Process):
 
     def wait_command(self):
         global led_brightness_default
-        logging.info("wait_command")
+        logging.debug("wait_command")
         try:
             led = LEDDriver(led_brightness_default)
             while True:

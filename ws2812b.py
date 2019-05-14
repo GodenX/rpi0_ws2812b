@@ -19,7 +19,7 @@ import board
 import numpy
 import neopixel
 
-logging.getLogger().setLevel(logging.DEBUG)
+logging.getLogger().setLevel(logging.INFO)
 
 font5x3 = {
     0x00000020: [0x00, 0x00, 0x00],
@@ -178,7 +178,7 @@ class LEDDriver(object):
                                         pixel_order=order)
 
     def set_color(self, **color_dict):
-        logging.info("set_color")
+        logging.debug("set_color")
         for i in color_dict:
             self._strip[int(i)] = tuple(eval(color_dict[i]))
         self._show()
@@ -186,7 +186,7 @@ class LEDDriver(object):
 
     def color_random(self, display_time, wait_time=0.001):
         cycles = display_time / wait_time
-        logging.info("color_random: " + str(cycles))
+        logging.debug("color_random: " + str(cycles))
         for i in range(0, int(cycles)):
             a = random.randrange(0, 100, 1)
             r = random.randrange(0, 0xFF, 1)
@@ -204,7 +204,7 @@ class LEDDriver(object):
             g = random.randrange(0, 0xFF, 1)
         if b == "":
             b = random.randrange(0, 0xFF, 1)
-        logging.info("color_wipe: %d-%d-%d" % (r, g, b))
+        logging.debug("color_wipe: %d-%d-%d" % (r, g, b))
         for i in range(self._led_count):
             self._strip[matrix[i]] = (g, r, b)
             self._show()
@@ -214,7 +214,7 @@ class LEDDriver(object):
     def scroll_text_display(self, string, color="", wait_time=0.15):
         if color == "":
             color = random.randrange(0, 0xFFFFFF, 2)
-        logging.info("scroll_text_display: %s %d" % (string, color))
+        logging.debug("scroll_text_display: %s %d" % (string, color))
         for c in range(0, len(string)):
             for i in range(0, 3):
                 a = font5x3[ord(string[c])][i]
@@ -242,13 +242,13 @@ class LEDDriver(object):
         logging.debug("scroll_text_display end!")
 
     def clear_display(self):
-        logging.info("clear_display")
+        logging.debug("clear_display")
         self._strip.fill((0, 0, 0))
         self._show()
         logging.debug("clear_display end!")
 
     def power_off(self):
-        logging.info("power_off")
+        logging.debug("power_off")
         self.clear_display()
         self._strip.deinit()
         logging.debug("power_off end!")
@@ -263,5 +263,4 @@ class LEDDriver(object):
     def _show(self):
         global Brightness
         self._strip.brightness = Brightness[self.led_brightness]
-        logging.debug(self._strip.brightness)
         self._strip.show()
