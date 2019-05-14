@@ -19,7 +19,7 @@ import board
 import numpy
 import neopixel
 
-logging.getLogger().setLevel(logging.INFO)
+logging.getLogger().setLevel(logging.DEBUG)
 
 font5x3 = {
     0x00000020: [0x00, 0x00, 0x00],
@@ -167,42 +167,33 @@ Brightness = [0.000, 0.005, 0.010, 0.015, 0.020, 0.025, 0.030, 0.035, 0.040, 0.0
 class LEDDriver(object):
     def __init__(self, led_brightness, led_count=100, led_pin=board.D18, led_width=20, led_height=5,
                  order=neopixel.GRB):
+        global Brightness
         self._led_count = led_count
-        self._led_brightness = led_brightness
+        self.led_brightness = led_brightness
         self._led_width = led_width
         self._led_height = led_height
         self._display = [[0 for x in range(self._led_width)] for y in range(self._led_height)]
         # Create NeoPixel object
-        self._strip = neopixel.NeoPixel(led_pin, led_count, brightness=led_brightness, auto_write=False,
+        self._strip = neopixel.NeoPixel(led_pin, led_count, brightness=Brightness[self.led_brightness], auto_write=False,
                                         pixel_order=order)
 
-    def change_brightness(self, led_brightness):
-        global Brightness
-        if (led_brightness >= 0) and (led_brightness <= 48):
-            self._led_brightness = Brightness[led_brightness]
-            self._strip.brightness = self._led_brightness
-            self._strip.show()
-            logging.debug("change_brightness: " + str(self._led_brightness))
-        else:
-            logging.debug("led_brightness out of range!")
-
     def set_color(self, **color_dict):
-        logging.debug("set_color")
+        logging.info("set_color")
         for i in color_dict:
             self._strip[int(i)] = tuple(eval(color_dict[i]))
-        self._strip.show()
+        self._show()
         logging.debug("set_color end!")
 
     def color_random(self, display_time, wait_time=0.001):
         cycles = display_time / wait_time
-        logging.debug("color_random: " + str(cycles))
+        logging.info("color_random: " + str(cycles))
         for i in range(0, int(cycles)):
             a = random.randrange(0, 100, 1)
             r = random.randrange(0, 0xFF, 1)
             g = random.randrange(0, 0xFF, 1)
             b = random.randrange(0, 0xFF, 1)
             self._strip[a] = (r, g, b)
-            self._strip.show()
+            self._show()
             time.sleep(wait_time)
         logging.debug("color_random end!")
 
@@ -213,17 +204,17 @@ class LEDDriver(object):
             g = random.randrange(0, 0xFF, 1)
         if b == "":
             b = random.randrange(0, 0xFF, 1)
-        logging.debug("color_wipe: %d-%d-%d" % (r, g, b))
+        logging.info("color_wipe: %d-%d-%d" % (r, g, b))
         for i in range(self._led_count):
             self._strip[matrix[i]] = (g, r, b)
-            self._strip.show()
+            self._show()
             time.sleep(wait_time)
         logging.debug("color_wipe end!")
 
     def scroll_text_display(self, string, color="", wait_time=0.15):
         if color == "":
             color = random.randrange(0, 0xFFFFFF, 2)
-        logging.debug("scroll_text_display: %s %d" % (string, color))
+        logging.info("scroll_text_display: %s %d" % (string, color))
         for c in range(0, len(string)):
             for i in range(0, 3):
                 a = font5x3[ord(string[c])][i]
@@ -251,13 +242,13 @@ class LEDDriver(object):
         logging.debug("scroll_text_display end!")
 
     def clear_display(self):
-        logging.debug("clear_display")
+        logging.info("clear_display")
         self._strip.fill((0, 0, 0))
-        self._strip.show()
+        self._show()
         logging.debug("clear_display end!")
 
     def power_off(self):
-        logging.debug("power_off")
+        logging.info("power_off")
         self.clear_display()
         self._strip.deinit()
         logging.debug("power_off end!")
@@ -267,4 +258,10 @@ class LEDDriver(object):
             for y in range(0, self._led_height):
                 self._strip[matrix[y * 20 + x]] = (
                     (self._display[y][x] >> 8) & 0xFF, self._display[y][x] >> 16, self._display[y][x] & 0xFF)
+        self._show()
+
+    def _show(self):
+        global Brightness
+        self._strip.brightness = Brightness[self.led_brightness]
+        logging.debug(self._strip.brightness)
         self._strip.show()
