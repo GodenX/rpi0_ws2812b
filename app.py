@@ -85,7 +85,13 @@ class LEDTask(Process):
         logging.debug("mode1")
         try:
             led = self._create_led_object()
-            led.scroll_text_display(self._value["str"])
+            if "color" in self._value:
+                if (self._value["color"] >= 0) and (self._value["color"] <= 0xFFFFFF):
+                    led.scroll_text_display(self._value["str"], self._value["color"])
+                else:
+                    led.scroll_text_display(self._value["str"])
+            else:
+                led.scroll_text_display(self._value["str"])
         except Exception as e:
             self.command_error(str(e))
 

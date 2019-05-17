@@ -211,8 +211,8 @@ class LEDDriver(object):
             time.sleep(wait_time)
         logging.debug("color_wipe end!")
 
-    def scroll_text_display(self, string, color="", wait_time=0.15):
-        if color == "":
+    def scroll_text_display(self, string, color=None, wait_time=0.15):
+        if not color:
             color = random.randrange(0, 0xFFFFFF, 2)
         logging.debug("scroll_text_display: %s %d" % (string, color))
         for c in range(0, len(string)):
