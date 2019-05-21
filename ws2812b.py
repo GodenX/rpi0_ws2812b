@@ -157,110 +157,126 @@ matrix = [95, 94, 85, 84, 75, 74, 65, 64, 55, 54, 45, 44, 35, 34, 25, 24, 15, 14
           98, 91, 88, 81, 78, 71, 68, 61, 58, 51, 48, 41, 38, 31, 28, 21, 18, 11, 8, 1,
           99, 90, 89, 80, 79, 70, 69, 60, 59, 50, 49, 40, 39, 30, 29, 20, 19, 10, 9, 0]
 
-Brightness = [0.000, 0.005, 0.010, 0.015, 0.020, 0.025, 0.030, 0.035, 0.040, 0.05,
-              0.06, 0.07, 0.08, 0.09, 0.10, 0.11, 0.12, 0.13, 0.14, 0.15,
-              0.17, 0.19, 0.21, 0.23, 0.25, 0.27, 0.29, 0.31, 0.33, 0.35,
-              0.38, 0.41, 0.44, 0.47, 0.50, 0.53, 0.56, 0.59, 0.62, 0.65,
-              0.69, 0.73, 0.77, 0.81, 0.85, 0.89, 0.93, 0.97, 1]
+brightness_list = [0.000, 0.005, 0.010, 0.015, 0.020, 0.025, 0.030, 0.035, 0.040, 0.05,
+                   0.06, 0.07, 0.08, 0.09, 0.10, 0.11, 0.12, 0.13, 0.14, 0.15,
+                   0.17, 0.19, 0.21, 0.23, 0.25, 0.27, 0.29, 0.31, 0.33, 0.35,
+                   0.38, 0.41, 0.44, 0.47, 0.50, 0.53, 0.56, 0.59, 0.62, 0.65,
+                   0.69, 0.73, 0.77, 0.81, 0.85, 0.89, 0.93, 0.97, 1]
 
 
 class LEDDriver(object):
-    def __init__(self, led_brightness, led_count=100, led_pin=board.D18, led_width=20, led_height=5,
-                 order=neopixel.GRB):
-        global Brightness
-        self._led_count = led_count
-        self.led_brightness = led_brightness
-        self._led_width = led_width
-        self._led_height = led_height
-        self._display = [[0 for x in range(self._led_width)] for y in range(self._led_height)]
+    def __init__(self, led_brightness, led_count=100, led_pin=board.D18, order=neopixel.GRB):
+        self._led_brightness = led_brightness
         # Create NeoPixel object
-        self._strip = neopixel.NeoPixel(led_pin, led_count, brightness=Brightness[self.led_brightness], auto_write=False,
-                                        pixel_order=order)
+        self._strip = neopixel.NeoPixel(led_pin, led_count, brightness=brightness_list[self._led_brightness],
+                                        auto_write=False, pixel_order=order)
+
+    @staticmethod
+    def color_convent(color_r=None, color_g=None, color_b=None, color=None, color_tuple=None):
+        try:
+            if color_r and color_g and color_b:
+                pass
+            elif color:
+                color_r = (color >> 16) & 0xFF
+                color_g = (color >> 8) & 0xFF
+                color_b = color & 0xFF
+            elif color_tuple:
+                color_r = color_tuple[0]
+                color_g = color_tuple[1]
+                color_b = color_tuple[2]
+            return color_g, color_r, color_b
+        except Exception as e:
+            logging.error(e)
+            return None
 
     def set_color(self, **color_dict):
-        logging.debug("set_color")
         for i in color_dict:
-            self._strip[int(i)] = tuple(eval(color_dict[i]))
-        self._show()
-        logging.debug("set_color end!")
+            self._strip[int(i)] = self.color_convent(color=color_dict[i])
+        self.show()
+
+    def solid_color(self, color):
+        self._strip.fill(self.color_convent(color=color))
+        self.show()
+
+    def clear_display(self):
+        self.solid_color(color=0)
+
+    def set_brightness(self, brightness):
+        self._led_brightness = brightness
+
+    def get_brightness(self):
+        return self._led_brightness
+
+    def show(self):
+        self._strip.brightness = brightness_list[self._led_brightness]
+        self._strip.show()
+
+
+class LEDDefaultEffection(LEDDriver):
+    def __init__(self):
+        super().__init__(self)
+        self.led = LEDDriver(40)
+
+    def start_with_white_color(self, brightness):
+        logging.debug("start_with_white_color")
+        self.solid_color(0xFFFFFF)
+        for i in range(0, brightness):
+            self.led.set_brightness(i)
+            self.led.show()
+            time.sleep(0.003)
 
     def color_random(self, display_time, wait_time=0.001):
         cycles = display_time / wait_time
         logging.debug("color_random: " + str(cycles))
         for i in range(0, int(cycles)):
-            a = random.randrange(0, 100, 1)
-            r = random.randrange(0, 0xFF, 1)
-            g = random.randrange(0, 0xFF, 1)
-            b = random.randrange(0, 0xFF, 1)
-            self._strip[a] = (r, g, b)
-            self._show()
+            self.led.set_color(**{str(random.randrange(0, 100, 1)): random.randrange(0, 0xFFFFFF, 2)})
             time.sleep(wait_time)
         logging.debug("color_random end!")
 
-    def color_wipe(self, r="", g="", b="", wait_time=0.05):
-        if r == "":
-            r = random.randrange(0, 0xFF, 1)
-        if g == "":
-            g = random.randrange(0, 0xFF, 1)
-        if b == "":
-            b = random.randrange(0, 0xFF, 1)
-        logging.debug("color_wipe: %d-%d-%d" % (r, g, b))
-        for i in range(self._led_count):
-            self._strip[matrix[i]] = (g, r, b)
-            self._show()
-            time.sleep(wait_time)
-        logging.debug("color_wipe end!")
-
     def scroll_text_display(self, string, color=None, wait_time=0.15):
+        display = [[0 for x in range(0, 20)] for y in range(0, 5)]
+
+        def draw_display():
+            tmp = {}
+            for x in range(0, 20):
+                for y in range(0, 5):
+                    tmp[str(matrix[y * 20 + x])] = display[y][x]
+            self.led.set_color(**tmp)
+
         if not color:
             color = random.randrange(0, 0xFFFFFF, 2)
         logging.debug("scroll_text_display: %s %d" % (string, color))
         for c in range(0, len(string)):
             for i in range(0, 3):
                 a = font5x3[ord(string[c])][i]
-                for j in range(0, self._led_height):
+                for j in range(0, 5):
                     if a & mask[j]:
-                        self._display[j][19] = color
+                        display[j][19] = color
                     else:
-                        self._display[j][19] = 0
-                self._draw_display()
-                self._display = numpy.roll(self._display, -1, axis=1)
+                        display[j][19] = 0
+                draw_display()
+                display = numpy.roll(display, -1, axis=1)
                 time.sleep(wait_time)
             # add zero column after every letter
-            for j in range(0, self._led_height):
-                self._display[j][19] = 0
-            self._draw_display()
-            self._display = numpy.roll(self._display, -1, axis=1)
+            for j in range(0, 5):
+                display[j][19] = 0
+            draw_display()
+            display = numpy.roll(display, -1, axis=1)
             time.sleep(wait_time)
         # shift text out of display (20 pixel)
-        for i in range(0, self._led_width):
-            for j in range(0, self._led_height):
-                self._display[j][19] = 0
-            self._draw_display()
-            self._display = numpy.roll(self._display, -1, axis=1)
+        for i in range(0, 20):
+            for j in range(0, 5):
+                display[j][19] = 0
+            draw_display()
+            display = numpy.roll(display, -1, axis=1)
             time.sleep(wait_time)
         logging.debug("scroll_text_display end!")
 
-    def clear_display(self):
-        logging.debug("clear_display")
-        self._strip.fill((0, 0, 0))
-        self._show()
-        logging.debug("clear_display end!")
-
-    def power_off(self):
-        logging.debug("power_off")
-        self.clear_display()
-        self._strip.deinit()
-        logging.debug("power_off end!")
-
-    def _draw_display(self):
-        for x in range(0, self._led_width):
-            for y in range(0, self._led_height):
-                self._strip[matrix[y * 20 + x]] = (
-                    (self._display[y][x] >> 8) & 0xFF, self._display[y][x] >> 16, self._display[y][x] & 0xFF)
-        self._show()
-
-    def _show(self):
-        global Brightness
-        self._strip.brightness = Brightness[self.led_brightness]
-        self._strip.show()
+    def color_wipe(self, color=None, wait_time=0.05):
+        if not color:
+            color = random.randrange(0, 0xFFFFFF, 2)
+        logging.debug("color_wipe: 0x%X" % color)
+        for i in range(0, 100):
+            self.led.set_color(**{str(matrix[i]): color})
+            time.sleep(wait_time)
+        logging.debug("color_wipe end!")
