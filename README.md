@@ -39,9 +39,17 @@
 {
     "Command":"system_control",         # 控制模式选择
     "Wait_s":0,                         # 立即执行
+    "Brightness":40,                    # 亮度调整，范围为 0~48
     "Value":{
-        "cmd":"Brightness:40"           # 亮度调整，范围为 0~48
+        "cmd":"PowerON"                 # 开启显示
         }
+}
+```
+- change_brightness：改变灯光亮度：
+```
+{
+    "Command":"change_brightness",         # 控制模式选择
+    "Brightness":40,       # 亮度调整，范围为 0~48
 }
 ```
 - mode0：通过灯珠编号独立控制每一个灯珠，示例演示控制第0个灯珠和第一个灯珠的控制方式，其他灯珠以此类推：
@@ -49,8 +57,8 @@
 {
     "Command":"mode0",         # 控制模式选择
     "Wait_s":60,               # 延时120秒执行
+    "Brightness":40,       # 亮度调整，范围为 0~48
     "Value":{                  # 模式0时的参数，空缺则保持不变
-        "Brightness":40,       # 亮度调整，范围为 0~48
         "0":0xFF0000,         # 第0个灯珠，RGB色彩
         "1":0x00FF00"
     }
@@ -61,8 +69,8 @@
 {
     "Command":"mode1",         # 控制模式选择
     "Wait_s":120,              # 延时120秒执行
+    "Brightness":40,       # 亮度调整，范围为 0~48
     "Value":{
-        "Brightness":40,       # 亮度调整，范围为 0~48
         "str":"hello",         # 参数为需要显示的字符串
         "color":0              # 颜色编号 0 ~ 0xFFFFFF, 如果此参数空缺则随机显示
         }
@@ -81,8 +89,8 @@
 {
     "Command":"mode2",                            # 控制模式选择
     "Wait_s":120,                                 # 延时120秒执行
+    "Brightness":40,                          # 亮度调整，范围为 0~48
     "Value":{
-        "Brightness":40,                          # 亮度调整，范围为 0~48
         "effect":"effect01"                       # 参数为预置效果编号
         }
 }

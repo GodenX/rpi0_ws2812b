@@ -15,13 +15,12 @@ __author__ = 'jackie'
 
 import logging.handlers
 import json
-import os
 import paho.mqtt.client
-from multiprocessing import Queue
-from ws2812b import *
-from app import *
+import ws2812b
+import app
 
-logging.getLogger().setLevel(logging.INFO)
+mqtt_topic_tx = "/LED0/Tx"
+mqtt_topic_rx = "/LED0/Rx"
 
 
 class MyMQTTClient(object):
@@ -33,7 +32,7 @@ class MyMQTTClient(object):
         self._client = paho.mqtt.client.Client(client_id)
         self._client.on_connect = self._on_connect
         self._client.on_message = self._on_message
-        self._task = LEDTask("wait_command", 0, **{"Brightness": 43})
+        self._task = app.LEDTask("system_control", 0, 40, **{"cmd": "PowerON"})
         self._task.daemon = True
         self._task.start()
 
@@ -45,14 +44,19 @@ class MyMQTTClient(object):
         try:
             var = json.loads(msg.payload.decode("utf-8"))
             logging.debug(var)
-            self._task.terminate()
-            self._task.join()
-            self._task = LEDTask(var["Command"], var["Wait_s"], **var["Value"])
-            self._task.daemon = True
-            self._task.start()
+            if "change_brightness" in var["Command"]:
+                ws2812b.led.brightness = ws2812b.brightness_list[var["Brightness"]]
+                ws2812b.led.show()
+                logging.debug(ws2812b.led.brightness)
+            else:
+                self._task.terminate()
+                self._task.join()
+                self._task = app.LEDTask(var["Command"], var["Wait_s"], var["Brightness"], **var["Value"])
+                self._task.daemon = True
+                self._task.start()
         except Exception as e:
             logging.error(e)
-            self._client.publish(mqtt_topic_tx, payload=e, qos=0, retain=False)
+            self._client.publish(mqtt_topic_tx, payload=str(e), qos=0, retain=False)
 
     def connect(self):
         self._client.connect(self._hostname, self._port)
