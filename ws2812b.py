@@ -14,8 +14,9 @@
 __author__ = 'jackie'
 
 import logging.handlers
-import time, random
-from multiprocessing import Process, Queue
+import time
+import random
+from multiprocessing import Process
 import board
 import numpy
 import neopixel
@@ -146,27 +147,22 @@ COLORS = (BLUE, GREEN, RED, YELLOW, CYAN, MAGENTA, ORANGE)
 LIGHTCOLORS = (LIGHTBLUE, LIGHTGREEN, LIGHTRED, LIGHTYELLOW)
 
 # Zig-Zag resorting array for cylinder matrix
-# matrix = [0, 9, 10, 19, 20, 29, 30, 39, 40, 49, 50, 59, 60, 69, 70, 79, 80, 89, 90, 99,
-# 		  1, 8, 11, 18, 21, 28, 31, 38, 41, 48, 51, 58, 61, 68, 71, 78, 81, 88, 91, 98,
-# 	      2, 7, 12, 17, 22, 27, 32, 37, 42, 47, 52, 57, 62, 67, 72, 77, 82, 87, 92, 97,
-# 	      3, 6, 13, 16, 23, 26, 33, 36, 43, 46, 53, 56, 63, 66, 73, 76, 83, 86, 93, 96,
-# 	      4, 5, 14, 15, 24, 25, 34, 35, 44, 45, 54, 55, 64, 65, 74, 75, 84, 85, 94, 95]
-matrix = [95, 94, 85, 84, 75, 74, 65, 64, 55, 54, 45, 44, 35, 34, 25, 24, 15, 14, 5, 4,
-          96, 93, 86, 83, 76, 73, 66, 63, 56, 53, 46, 43, 36, 33, 26, 23, 16, 13, 6, 3,
-          97, 92, 87, 82, 77, 72, 67, 62, 57, 52, 47, 42, 37, 32, 27, 22, 17, 12, 7, 2,
-          98, 91, 88, 81, 78, 71, 68, 61, 58, 51, 48, 41, 38, 31, 28, 21, 18, 11, 8, 1,
-          99, 90, 89, 80, 79, 70, 69, 60, 59, 50, 49, 40, 39, 30, 29, 20, 19, 10, 9, 0]
+matrix = [4, 5, 14, 15, 24, 25, 34, 35, 44, 45, 54, 55, 64, 65, 74, 75, 84, 85, 94, 95,
+          3, 6, 13, 16, 23, 26, 33, 36, 43, 46, 53, 56, 63, 66, 73, 76, 83, 86, 93, 96,
+          2, 7, 12, 17, 22, 27, 32, 37, 42, 47, 52, 57, 62, 67, 72, 77, 82, 87, 92, 97,
+          1, 8, 11, 18, 21, 28, 31, 38, 41, 48, 51, 58, 61, 68, 71, 78, 81, 88, 91, 98,
+          0, 9, 10, 19, 20, 29, 30, 39, 40, 49, 50, 59, 60, 69, 70, 79, 80, 89, 90, 99]
+# matrix = [95, 94, 85, 84, 75, 74, 65, 64, 55, 54, 45, 44, 35, 34, 25, 24, 15, 14, 5, 4,
+#           96, 93, 86, 83, 76, 73, 66, 63, 56, 53, 46, 43, 36, 33, 26, 23, 16, 13, 6, 3,
+#           97, 92, 87, 82, 77, 72, 67, 62, 57, 52, 47, 42, 37, 32, 27, 22, 17, 12, 7, 2,
+#           98, 91, 88, 81, 78, 71, 68, 61, 58, 51, 48, 41, 38, 31, 28, 21, 18, 11, 8, 1,
+#           99, 90, 89, 80, 79, 70, 69, 60, 59, 50, 49, 40, 39, 30, 29, 20, 19, 10, 9, 0]
 
 brightness_list = [0.000, 0.005, 0.010, 0.015, 0.020, 0.025, 0.030, 0.035, 0.040, 0.05,
                    0.06, 0.07, 0.08, 0.09, 0.10, 0.11, 0.12, 0.13, 0.14, 0.15,
                    0.17, 0.19, 0.21, 0.23, 0.25, 0.27, 0.29, 0.31, 0.33, 0.35,
                    0.38, 0.41, 0.44, 0.47, 0.50, 0.53, 0.56, 0.59, 0.62, 0.65,
-                   0.69, 0.73, 0.77, 0.81, 0.85, 0.89, 0.93, 0.97, 1]
-
-led_count = 100
-led_pin = board.D18
-order = neopixel.GRB
-led = neopixel.NeoPixel(led_pin, led_count, brightness=brightness_list[0], auto_write=False, pixel_order=order)
+                   0.69, 0.73, 0.77, 0.81, 0.85, 0.89, 0.93, 0.97, 1.00]
 
 
 class LEDDriver(object):
@@ -191,68 +187,73 @@ class LEDDriver(object):
             logging.error(e)
             return None
 
-    def set_color(self, led_obj, brightness, **color_dict):
-        led_obj.brightness = brightness_list[brightness]
+    def set_color(self, brightness, **color_dict):
         for i in color_dict:
-            led_obj[int(i)] = self.color_convent(color=color_dict[i])
-        led_obj.show()
+            color_dict[i] = self.color_convent(color=color_dict[i])
+        app.led_dict["strip"] = color_dict
+        app.led_dict["brightness"] = brightness
+        self.show()
 
-    def solid_color(self, led_obj, brightness, color):
-        led_obj.brightness = brightness_list[brightness]
-        led_obj.fill(self.color_convent(color=color))
-        led_obj.show()
+    def solid_color(self, brightness, color):
+        app.led_dict["isSolidColor"] = self.color_convent(color=color)
+        app.led_dict["brightness"] = brightness
+        self.show()
+
+    def clear_display(self):
+        self.solid_color(0, 0)
 
     @staticmethod
-    def clear_display(led_obj):
-        led_obj.brightness = 0
-        led_obj.fill((0, 0, 0))
-        led_obj.show()
+    def show():
+        while app.led_dict["isChanged"]:
+            pass
+        app.led_dict["isChanged"] = True
 
 
 class LEDDefaultEffection(LEDDriver):
-    def __init__(self):
-        self.led = LEDDriver()
-
-    def start_with_white_color(self, led_obj, brightness):
+    def start_with_white_color(self):
         logging.debug("start_with_white_color")
-        led_obj.fill(self.led.color_convent(color=0xFFFFFF))
-        for i in range(0, brightness):
-            led_obj.brightness = brightness_list[i]
-            led_obj.show()
+        self.solid_color(0, 0xFFFFFF)
+        for i in range(0, 49):
+            app.led_dict["brightness"] = i
+            self.show()
             time.sleep(0.05)
         logging.debug("start_with_white_color end")
 
-    def color_random(self, led_obj, brightness, display_time, wait_time=0.001):
+    def color_random(self, brightness, display_time, wait_time=0.001):
         cycles = display_time / wait_time
         logging.debug("color_random: " + str(cycles))
-        led_obj.brightness = brightness_list[brightness]
+
+        app.led_dict["brightness"] = brightness
         for i in range(0, int(cycles)):
-            led_obj[random.randrange(0, 100, 1)] = self.led.color_convent(color=random.randrange(0, 0xFFFFFF, 2))
-            led_obj.show()
+            app.led_dict["strip"] = {
+                random.randrange(0, 100, 1): self.color_convent(color=random.randrange(0, 0xFFFFFF, 2))}
+            self.show()
             time.sleep(wait_time)
         logging.debug("color_random end!")
 
-    def color_random_change_brightness(self, led_obj):
+    def color_random_change_brightness(self):
         logging.debug("color_random_change_brightness")
         for i in range(0, 49):
-            self.color_random(led_obj=led_obj, brightness=i, display_time=0.003)
+            self.color_random(brightness=i, display_time=0.003)
         for i in range(48, -1, -1):
-            self.color_random(led_obj=led_obj, brightness=i, display_time=0.003)
+            self.color_random(brightness=i, display_time=0.003)
         logging.debug("color_random_change_brightness end!")
 
-    def scroll_text_display(self, led_obj, string, brightness, color=None, wait_time=0.15):
+    def scroll_text_display(self, string, brightness, color=None, wait_time=0.15):
         display = [[0 for x in range(0, 20)] for y in range(0, 5)]
 
-        def draw_display(led_obj_tmp):
+        def draw_display():
+            strip_tmp = {}
             for x in range(0, 20):
                 for y in range(0, 5):
-                    led_obj_tmp[matrix[y * 20 + x]] = self.led.color_convent(color=display[y][x])
-            led_obj_tmp.show()
+                    strip_tmp[matrix[y * 20 + x]] = self.color_convent(color=display[y][x])
+            app.led_dict["strip"] = strip_tmp
+            self.show()
 
-        if color is None:
+        if (color is None) or (not color == 0):
             color = random.randrange(0, 0xFFFFFF, 2)
         logging.debug("scroll_text_display: %s %d" % (string, color))
-        led_obj.brightness = brightness_list[brightness]
+        app.led_dict["brightness"] = brightness
         for c in range(0, len(string)):
             for i in range(0, 3):
                 a = font5x3[ord(string[c])][i]
@@ -261,31 +262,60 @@ class LEDDefaultEffection(LEDDriver):
                         display[j][19] = color
                     else:
                         display[j][19] = 0
-                draw_display(led_obj)
+                draw_display()
                 display = numpy.roll(display, -1, axis=1)
                 time.sleep(wait_time)
             # add zero column after every letter
             for j in range(0, 5):
                 display[j][19] = 0
-            draw_display(led_obj)
+            draw_display()
             display = numpy.roll(display, -1, axis=1)
             time.sleep(wait_time)
         # shift text out of display (20 pixel)
         for i in range(0, 20):
             for j in range(0, 5):
                 display[j][19] = 0
-            draw_display(led_obj)
+            draw_display()
             display = numpy.roll(display, -1, axis=1)
             time.sleep(wait_time)
         logging.debug("scroll_text_display end!")
 
-    def color_wipe(self, led_obj, brightness, color=None, wait_time=0.05):
-        if color is None:
+    def color_wipe(self, brightness, color=None, wait_time=0.05):
+        if (color is None) or (not color == 0):
             color = random.randrange(0, 0xFFFFFF, 2)
         logging.debug("color_wipe: 0x%X" % color)
-        led_obj.brightness = brightness_list[brightness]
+        app.led_dict["brightness"] = brightness
         for i in range(0, 100):
-            led_obj[matrix[i]] = self.led.color_convent(color=color)
-            led_obj.show()
+            app.led_dict["strip"] = {
+                matrix[i]: self.color_convent(color=color)}
+            self.show()
             time.sleep(wait_time)
         logging.debug("color_wipe end!")
+
+
+class LEDIOFunc(Process):
+    def __init__(self):
+        Process.__init__(self)
+        self.led = neopixel.NeoPixel(board.D18, 100, brightness=brightness_list[0], auto_write=False,
+                                     pixel_order=neopixel.GRB)
+
+    def run(self):
+        while True:
+            try:
+                if app.led_dict["isChanged"]:
+                    if (app.led_dict["isSolidColor"] is None) and (app.led_dict["strip"] is not None):
+                        for i in app.led_dict["strip"]:
+                            self.led[int(i)] = app.led_dict["strip"][i]
+                    elif app.led_dict["isSolidColor"] is not None:
+                        self.led.fill(app.led_dict["isSolidColor"])
+                    else:
+                        pass
+                    self.led.brightness = brightness_list[app.led_dict["brightness"]]
+                    self.led.show()
+                    app.led_dict["isSolidColor"] = None
+                    app.led_dict["strip"] = None
+                    app.led_dict["isChanged"] = False
+                    logging.debug(self.led.brightness)
+                    logging.debug(str(self.led))
+            except Exception as e:
+                logging.error(e)

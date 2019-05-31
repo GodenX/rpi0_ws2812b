@@ -14,16 +14,21 @@
 __author__ = 'jackie'
 
 import logging.handlers
-import os, re
+import os
 import time
-from multiprocessing import Process, Queue
+from multiprocessing import Process, Manager
 import mqtt_client
 import ws2812b
 
 logging.getLogger().setLevel(logging.DEBUG)
 
+led_manager = Manager()
+led_dict = led_manager.dict()
+led_dict["isChanged"] = False
+led_dict["brightness"] = 48
+led_dict["isSolidColor"] = None
+led_dict["strip"] = None
 command_list = ("system_control", "mode0", "mode1", "mode2")
-led_queue = Queue()
 
 
 class LEDTask(Process):
@@ -37,7 +42,7 @@ class LEDTask(Process):
         if (brightness >= 0) and (brightness <= 48):
             self.brightness = brightness
         else:
-            self.brightness = 40
+            self.brightness = 48
         self.value = value
 
     def run(self):
@@ -50,10 +55,10 @@ class LEDTask(Process):
         try:
             if self.value["cmd"] == "PowerON":
                 display_obj = ws2812b.LEDDefaultEffection()
-                display_obj.start_with_white_color(ws2812b.led, self.brightness)
+                display_obj.start_with_white_color()
             elif self.value["cmd"] == "PowerOFF":
                 display_obj = ws2812b.LEDDriver()
-                display_obj.clear_display(ws2812b.led)
+                display_obj.clear_display()
             elif self.value["cmd"] == "SystemHalt":
                 os.popen("halt")
             elif self.value["cmd"] == "SystemReboot":
@@ -67,24 +72,24 @@ class LEDTask(Process):
         logging.debug("mode0")
         try:
             display_obj = ws2812b.LEDDriver()
-            display_obj.set_color(ws2812b.led, self.brightness, **self.value)
+            display_obj.set_color(self.brightness, **self.value)
         except Exception as e:
             self.command_error(str(e))
 
     def mode1(self):
         logging.debug("mode1")
-        # try:
-        display_obj = ws2812b.LEDDefaultEffection()
-        if "color" in self.value:
-            if (self.value["color"] >= 0) and (self.value["color"] <= 0xFFFFFF):
-                display_obj.scroll_text_display(ws2812b.led, self.value["str"], self.brightness,
-                                                self.value["color"])
-            else:
-                display_obj.scroll_text_display(ws2812b.led, self.value["str"], self.brightness)
-        else:
-            display_obj.scroll_text_display(ws2812b.led, self.value["str"], self.brightness)
-        # except Exception as e:
-        #     self.command_error(str(e))
+        try:
+            display_obj = ws2812b.LEDDefaultEffection()
+            while True:
+                if "color" in self.value:
+                    if (self.value["color"] >= 0) and (self.value["color"] <= 0xFFFFFF):
+                        display_obj.scroll_text_display(self.value["str"], self.brightness, self.value["color"])
+                    else:
+                        display_obj.scroll_text_display(self.value["str"], self.brightness)
+                else:
+                    display_obj.scroll_text_display(self.value["str"], self.brightness)
+        except Exception as e:
+            self.command_error(str(e))
 
     def mode2(self):
         logging.debug("mode2")
@@ -92,13 +97,13 @@ class LEDTask(Process):
             display_obj = ws2812b.LEDDefaultEffection()
             if self.value["effect"] == "effect01":
                 while True:
-                    display_obj.scroll_text_display(ws2812b.led, "HELLO WORLD", self.brightness)
+                    display_obj.scroll_text_display("HELLO WORLD", self.brightness)
             elif self.value["effect"] == "effect02":
                 while True:
-                    display_obj.color_random_change_brightness(ws2812b.led)
+                    display_obj.color_random_change_brightness()
             elif self.value["effect"] == "effect03":
                 while True:
-                    display_obj.color_wipe(ws2812b.led, self.brightness)
+                    display_obj.color_wipe(self.brightness)
             else:
                 self.command_error()
         except Exception as e:
@@ -110,6 +115,9 @@ class LEDTask(Process):
 
 
 if __name__ == '__main__':
+    led_process = ws2812b.LEDIOFunc()
+    led_process.daemon = True
+    led_process.start()
     mq = mqtt_client.MyMQTTClient("127.0.0.1", 1883)
     mq.connect()
     mq.run()

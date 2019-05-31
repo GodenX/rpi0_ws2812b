@@ -16,11 +16,10 @@ __author__ = 'jackie'
 import logging.handlers
 import json
 import paho.mqtt.client
-import ws2812b
 import app
 
-mqtt_topic_tx = "/LED0/Tx"
-mqtt_topic_rx = "/LED0/Rx"
+mqtt_topic_tx = "/LED/Tx"
+mqtt_topic_rx = "/LED/Rx"
 
 
 class MyMQTTClient(object):
@@ -32,7 +31,8 @@ class MyMQTTClient(object):
         self._client = paho.mqtt.client.Client(client_id)
         self._client.on_connect = self._on_connect
         self._client.on_message = self._on_message
-        self._task = app.LEDTask("system_control", 0, 40, **{"cmd": "PowerON"})
+
+        self._task = app.LEDTask("system_control", 0, 48, **{"cmd": "PowerON"})
         self._task.daemon = True
         self._task.start()
 
@@ -45,9 +45,10 @@ class MyMQTTClient(object):
             var = json.loads(msg.payload.decode("utf-8"))
             logging.debug(var)
             if "change_brightness" in var["Command"]:
-                ws2812b.led.brightness = ws2812b.brightness_list[var["Brightness"]]
-                ws2812b.led.show()
-                logging.debug(ws2812b.led.brightness)
+                while app.led_dict["isChanged"]:
+                    pass
+                app.led_dict["brightness"] = var["Brightness"]
+                app.led_dict["isChanged"] = True
             else:
                 self._task.terminate()
                 self._task.join()
