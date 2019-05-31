@@ -210,10 +210,10 @@ class LEDDriver(object):
 
 
 class LEDDefaultEffection(LEDDriver):
-    def start_with_white_color(self):
+    def start_with_white_color(self, brightness):
         logging.debug("start_with_white_color")
         self.solid_color(0, 0xFFFFFF)
-        for i in range(0, 49):
+        for i in range(0, brightness + 1):
             app.led_dict["brightness"] = i
             self.show()
             time.sleep(0.05)
@@ -250,9 +250,9 @@ class LEDDefaultEffection(LEDDriver):
             app.led_dict["strip"] = strip_tmp
             self.show()
 
-        if (color is None) or (not color == 0):
+        if (color is None) or (color == 0):
             color = random.randrange(0, 0xFFFFFF, 2)
-        logging.debug("scroll_text_display: %s %d" % (string, color))
+        logging.debug("scroll_text_display: %s" % string)
         app.led_dict["brightness"] = brightness
         for c in range(0, len(string)):
             for i in range(0, 3):
@@ -281,13 +281,12 @@ class LEDDefaultEffection(LEDDriver):
         logging.debug("scroll_text_display end!")
 
     def color_wipe(self, brightness, color=None, wait_time=0.05):
-        if (color is None) or (not color == 0):
-            color = random.randrange(0, 0xFFFFFF, 2)
-        logging.debug("color_wipe: 0x%X" % color)
+        if (color is None) or (color == 0):
+            color = self.color_convent(color=random.randrange(0, 0xFFFFFF, 2))
+        logging.debug("color_wipe")
         app.led_dict["brightness"] = brightness
         for i in range(0, 100):
-            app.led_dict["strip"] = {
-                matrix[i]: self.color_convent(color=color)}
+            app.led_dict["strip"] = {matrix[i]: color}
             self.show()
             time.sleep(wait_time)
         logging.debug("color_wipe end!")

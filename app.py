@@ -55,7 +55,7 @@ class LEDTask(Process):
         try:
             if self.value["cmd"] == "PowerON":
                 display_obj = ws2812b.LEDDefaultEffection()
-                display_obj.start_with_white_color()
+                display_obj.start_with_white_color(self.brightness)
             elif self.value["cmd"] == "PowerOFF":
                 display_obj = ws2812b.LEDDriver()
                 display_obj.clear_display()
@@ -72,6 +72,7 @@ class LEDTask(Process):
         logging.debug("mode0")
         try:
             display_obj = ws2812b.LEDDriver()
+            display_obj.clear_display()
             display_obj.set_color(self.brightness, **self.value)
         except Exception as e:
             self.command_error(str(e))
@@ -80,6 +81,7 @@ class LEDTask(Process):
         logging.debug("mode1")
         try:
             display_obj = ws2812b.LEDDefaultEffection()
+            display_obj.clear_display()
             while True:
                 if "color" in self.value:
                     if (self.value["color"] >= 0) and (self.value["color"] <= 0xFFFFFF):
@@ -95,6 +97,7 @@ class LEDTask(Process):
         logging.debug("mode2")
         try:
             display_obj = ws2812b.LEDDefaultEffection()
+            display_obj.clear_display()
             if self.value["effect"] == "effect01":
                 while True:
                     display_obj.scroll_text_display("HELLO WORLD", self.brightness)
