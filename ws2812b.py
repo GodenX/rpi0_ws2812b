@@ -15,8 +15,9 @@ __author__ = 'jackie'
 
 import logging.handlers
 import time
+import datetime
 import random
-from multiprocessing import Process
+from multiprocessing import Process, Queue
 import board
 import numpy
 import neopixel
@@ -164,8 +165,16 @@ brightness_list = [0.000, 0.005, 0.010, 0.015, 0.020, 0.025, 0.030, 0.035, 0.040
                    0.38, 0.41, 0.44, 0.47, 0.50, 0.53, 0.56, 0.59, 0.62, 0.65,
                    0.69, 0.73, 0.77, 0.81, 0.85, 0.89, 0.93, 0.97, 1.00]
 
+led_dict = dict()
+led_dict["brightness"] = 48
+led_dict["isSolidColor"] = None
+led_dict["strip"] = None
+
 
 class LEDDriver(object):
+    def __init__(self, queue):
+        self.queue = queue
+
     @staticmethod
     def color_convent(color_r=None, color_g=None, color_b=None, color=None, color_tuple=None):
         try:
@@ -188,72 +197,67 @@ class LEDDriver(object):
             return None
 
     def set_color(self, brightness, **color_dict):
+        global led_dict
         for i in color_dict:
             color_dict[i] = self.color_convent(color=color_dict[i])
-        app.led_dict["strip"] = color_dict
-        app.led_dict["brightness"] = brightness
+        led_dict["strip"] = color_dict
+        led_dict["brightness"] = brightness
         self.show()
 
     def solid_color(self, brightness, color):
-        app.led_dict["isSolidColor"] = self.color_convent(color=color)
-        app.led_dict["brightness"] = brightness
+        global led_dict
+        led_dict["isSolidColor"] = self.color_convent(color=color)
+        led_dict["brightness"] = brightness
         self.show()
 
     def clear_display(self):
         self.solid_color(0, 0)
 
-    @staticmethod
-    def show():
-        while app.led_dict["isChanged"]:
-            pass
-        app.led_dict["isChanged"] = True
-
-
-class LEDDefaultEffection(LEDDriver):
     def start_with_white_color(self, brightness):
+        global led_dict
         logging.debug("start_with_white_color")
         self.solid_color(0, 0xFFFFFF)
         for i in range(0, brightness + 1):
-            app.led_dict["brightness"] = i
+            led_dict["brightness"] = i
             self.show()
             time.sleep(0.05)
         logging.debug("start_with_white_color end")
 
-    def color_random(self, brightness, display_time, wait_time=0.001):
-        cycles = display_time / wait_time
-        logging.debug("color_random: " + str(cycles))
-
-        app.led_dict["brightness"] = brightness
-        for i in range(0, int(cycles)):
-            app.led_dict["strip"] = {
+    def color_random(self, brightness):
+        global led_dict
+        logging.debug("color_random")
+        led_dict["brightness"] = brightness
+        for i in range(0, 3):
+            led_dict["strip"] = {
                 random.randrange(0, 100, 1): self.color_convent(color=random.randrange(0, 0xFFFFFF, 2))}
             self.show()
-            time.sleep(wait_time)
+            time.sleep(0.001)
         logging.debug("color_random end!")
 
     def color_random_change_brightness(self):
         logging.debug("color_random_change_brightness")
         for i in range(0, 49):
-            self.color_random(brightness=i, display_time=0.003)
+            self.color_random(brightness=i)
         for i in range(48, -1, -1):
-            self.color_random(brightness=i, display_time=0.003)
+            self.color_random(brightness=i)
         logging.debug("color_random_change_brightness end!")
 
     def scroll_text_display(self, string, brightness, color=None, wait_time=0.15):
-        display = [[0 for x in range(0, 20)] for y in range(0, 5)]
+        global led_dict
+        print("ScrollTextStart: ", datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f'))
+        led_dict["strip"] = dict()
+        display = [[(0, 0, 0) for x in range(0, 20)] for y in range(0, 5)]
 
         def draw_display():
-            strip_tmp = {}
             for x in range(0, 20):
                 for y in range(0, 5):
-                    strip_tmp[matrix[y * 20 + x]] = self.color_convent(color=display[y][x])
-            app.led_dict["strip"] = strip_tmp
-            self.show()
+                    led_dict["strip"][matrix[y * 20 + x]] = display[y][x]
+            # self.show()
 
         if (color is None) or (color == 0):
-            color = random.randrange(0, 0xFFFFFF, 2)
-        logging.debug("scroll_text_display: %s" % string)
-        app.led_dict["brightness"] = brightness
+            color = self.color_convent(color=random.randrange(0, 0xFFFFFF, 2))
+        logging.debug("scroll_text_display: %s %s" % (string, str(color)))
+        led_dict["brightness"] = brightness
         for c in range(0, len(string)):
             for i in range(0, 3):
                 a = font5x3[ord(string[c])][i]
@@ -261,60 +265,67 @@ class LEDDefaultEffection(LEDDriver):
                     if a & mask[j]:
                         display[j][19] = color
                     else:
-                        display[j][19] = 0
+                        display[j][19] = (0, 0, 0)
                 draw_display()
                 display = numpy.roll(display, -1, axis=1)
                 time.sleep(wait_time)
             # add zero column after every letter
             for j in range(0, 5):
-                display[j][19] = 0
+                display[j][19] = (0, 0, 0)
             draw_display()
             display = numpy.roll(display, -1, axis=1)
             time.sleep(wait_time)
         # shift text out of display (20 pixel)
         for i in range(0, 20):
             for j in range(0, 5):
-                display[j][19] = 0
+                display[j][19] = (0, 0, 0)
             draw_display()
             display = numpy.roll(display, -1, axis=1)
             time.sleep(wait_time)
         logging.debug("scroll_text_display end!")
+        print("ScrollTextEnd:   ", datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f'))
 
-    def color_wipe(self, brightness, color=None, wait_time=0.05):
+    def color_wipe(self, brightness, color=None):
+        global led_dict
         if (color is None) or (color == 0):
             color = self.color_convent(color=random.randrange(0, 0xFFFFFF, 2))
         logging.debug("color_wipe")
-        app.led_dict["brightness"] = brightness
+        led_dict["brightness"] = brightness
         for i in range(0, 100):
-            app.led_dict["strip"] = {matrix[i]: color}
+            led_dict["strip"] = {matrix[i]: color}
             self.show()
-            time.sleep(wait_time)
+            time.sleep(0.05)
         logging.debug("color_wipe end!")
+
+    def show(self):
+        self.queue.put(led_dict)
 
 
 class LEDIOFunc(Process):
-    def __init__(self):
+    def __init__(self, queue):
         Process.__init__(self)
+        self.queue = queue
         self.led = neopixel.NeoPixel(board.D18, 100, brightness=brightness_list[0], auto_write=False,
                                      pixel_order=neopixel.GRB)
 
     def run(self):
         while True:
+            led = self.queue.get()
             try:
-                if app.led_dict["isChanged"]:
-                    if (app.led_dict["isSolidColor"] is None) and (app.led_dict["strip"] is not None):
-                        for i in app.led_dict["strip"]:
-                            self.led[int(i)] = app.led_dict["strip"][i]
-                    elif app.led_dict["isSolidColor"] is not None:
-                        self.led.fill(app.led_dict["isSolidColor"])
-                    else:
-                        pass
-                    self.led.brightness = brightness_list[app.led_dict["brightness"]]
-                    self.led.show()
-                    app.led_dict["isSolidColor"] = None
-                    app.led_dict["strip"] = None
-                    app.led_dict["isChanged"] = False
-                    logging.debug(self.led.brightness)
-                    logging.debug(str(self.led))
+                # print("LEDIOFuncStart: ", datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f'))
+                if led["strip"] is not None:
+                    for i in led["strip"]:
+                        self.led[i] = led["strip"][i]
+                    led["strip"] = None
+                elif led["isSolidColor"] is not None:
+                    self.led.fill(led["isSolidColor"])
+                    led["isSolidColor"] = None
+                else:
+                    pass
+                self.led.brightness = brightness_list[led["brightness"]]
+                self.led.show()
+                # print("LEDIOFuncEnd:   ", datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f'))
+                # logging.debug(self.led.brightness)
+                # logging.debug(str(self.led))
             except Exception as e:
                 logging.error(e)
