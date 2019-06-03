@@ -34,7 +34,7 @@ class MyMQTTClient(object):
         self._client.on_connect = self._on_connect
         self._client.on_message = self._on_message
 
-        self._task = app.LEDTask(self.queue, "system_control", 0, 48, **{"cmd": "PowerON"})
+        self._task = app.LEDTask(task_queue=self.queue, command="system_control", wait_s=0, **{"cmd": "PowerON"})
         self._task.daemon = True
         self._task.start()
 
@@ -46,13 +46,14 @@ class MyMQTTClient(object):
         try:
             var = json.loads(msg.payload.decode("utf-8"))
             logging.debug(var)
+            led_cb = {"brightness": var["Brightness"]}
+            self.queue.put(led_cb)
             if "change_brightness" in var["Command"]:
-                led = {"brightness": var["Brightness"], "isSolidColor": None, "strip": None}
-                self.queue.put(led)
+                pass
             else:
                 self._task.terminate()
                 self._task.join()
-                self._task = app.LEDTask(self.queue, var["Command"], var["Wait_s"], var["Brightness"], **var["Value"])
+                self._task = app.LEDTask(task_queue=self.queue, command=var["Command"], wait_s=var["Wait_s"], **var["Value"])
                 self._task.daemon = True
                 self._task.start()
         except Exception as e:
