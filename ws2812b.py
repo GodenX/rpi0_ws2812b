@@ -192,10 +192,12 @@ class LEDDriver(object):
             return None
 
     def set_color(self, **color_dict):
+        logging.debug("SetColorStart: " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f'))
+        led_sc = {"strip": {}}
         for i in color_dict:
-            color_dict[i] = self.color_convent(color=color_dict[i])
-        led_sc = {"strip": color_dict}
+            led_sc["strip"][int(i)] = self.color_convent(color=color_dict[i])
         self.show(**led_sc)
+        logging.debug("SetColorEnd:   " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f'))
 
     def solid_color(self, color):
         led_soc = {"isSolidColor": self.color_convent(color=color)}
