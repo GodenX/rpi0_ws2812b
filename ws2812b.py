@@ -179,7 +179,7 @@ class LEDDriver(object):
                 color_r = (color >> 16) & 0xFF
                 color_g = (color >> 8) & 0xFF
                 color_b = color & 0xFF
-                return color_g, color_r, color_b
+                return color_r, color_g, color_b
             elif color_tuple is not None:
                 color_r = color_tuple[0]
                 color_g = color_tuple[1]
@@ -211,14 +211,16 @@ class LEDDriver(object):
         led_cd = {"isSolidColor": (0, 0, 0), "brightness": 0}
         self.show(**led_cd)
 
-    def start_with_white_color(self):
-        logging.debug("BootScreenStart: " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f'))
+    def lightness(self):
+        logging.debug("LightnessStart: " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f'))
+        led_swwc = {"brightness": 0}
+        self.show(**led_swwc)
         self.solid_color(0xFFFFFF)
         for i in range(0, 49):
             led_swwc = {"brightness": i}
             self.show(**led_swwc)
-            time.sleep(0.05)
-        logging.debug("BootScreenEnd:   " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f'))
+            time.sleep(0.03)
+        logging.debug("LightnessEnd:   " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f'))
 
     def color_random(self, brightness):
         led_cr = {"brightness": brightness, "strip": {}}

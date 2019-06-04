@@ -44,8 +44,11 @@ class LEDTask(Process):
         logging.debug("system_control")
         try:
             if self.value["cmd"] == "PowerON":
+                led_power_on = {"brightness": 0}
+                self.queue.put(led_power_on)
                 display_obj = ws2812b.LEDDriver(self.queue)
-                display_obj.start_with_white_color()
+                while True:
+                    display_obj.color_random_change_brightness()
             elif self.value["cmd"] == "PowerOFF":
                 display_obj = ws2812b.LEDDriver(self.queue)
                 display_obj.power_off()
@@ -97,6 +100,8 @@ class LEDTask(Process):
             elif self.value["effect"] == "effect03":
                 while True:
                     display_obj.color_wipe()
+            elif self.value["effect"] == "effect04":
+                display_obj.lightness()
             else:
                 self.command_error()
         except Exception as e:
