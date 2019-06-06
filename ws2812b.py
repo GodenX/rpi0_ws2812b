@@ -318,6 +318,6 @@ class LEDIOFunc(Process):
                 self.led.show()
                 # logging.debug("LEDIOFuncEnd:   " + datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f'))
                 # logging.debug("brightness: " + str(self.led.brightness))
-                # logging.debug(str(self.led))
+                # logging.debug("strip: " + str(self.led))
             except Exception as e:
                 logging.error(e)

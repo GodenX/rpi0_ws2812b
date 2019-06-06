@@ -53,7 +53,8 @@ class MyMQTTClient(object):
             else:
                 self._task.terminate()
                 self._task.join()
-                self._task = app.LEDTask(task_queue=self.queue, command=var["Command"], wait_s=var["Wait_s"], **var["Value"])
+                self._task = app.LEDTask(task_queue=self.queue, command=var["Command"], wait_s=var["Wait_s"],
+                                         **var["Value"])
                 self._task.daemon = True
                 self._task.start()
         except Exception as e:

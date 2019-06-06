@@ -21,7 +21,7 @@ import mqtt_client
 import ws2812b
 
 logging.getLogger().setLevel(logging.INFO)
-command_list = ("system_control", "mode0", "mode1", "mode2")
+command_list = ("system_control", "lightning", "solid_color", "mode0", "mode1", "mode2")
 
 
 class LEDTask(Process):
@@ -61,11 +61,27 @@ class LEDTask(Process):
         except Exception as e:
             self.command_error(str(e))
 
+    def lightning(self):
+        logging.debug("lightness")
+        try:
+            display_obj = ws2812b.LEDDriver(self.queue)
+            display_obj.clear_display()
+            display_obj.lightness()
+        except Exception as e:
+            self.command_error(str(e))
+
+    def solid_color(self):
+        logging.debug("solid_color")
+        try:
+            display_obj = ws2812b.LEDDriver(self.queue)
+            display_obj.solid_color(color=self.value["color"])
+        except Exception as e:
+            self.command_error(str(e))
+
     def mode0(self):
         logging.debug("mode0")
         try:
             display_obj = ws2812b.LEDDriver(self.queue)
-            display_obj.clear_display()
             display_obj.set_color(**self.value)
         except Exception as e:
             self.command_error(str(e))
@@ -100,8 +116,6 @@ class LEDTask(Process):
             elif self.value["effect"] == "effect03":
                 while True:
                     display_obj.color_wipe()
-            elif self.value["effect"] == "effect04":
-                display_obj.lightness()
             else:
                 self.command_error()
         except Exception as e:
